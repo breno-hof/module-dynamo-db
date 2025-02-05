@@ -5,8 +5,9 @@ resource "aws_dynamodb_table" "this" {
 	billing_mode					= var.is_billing_mode_pay_per_request ? "PAY_PER_REQUEST" : "PROVISIONED"
 	deletion_protection_enabled		= var.is_deletion_protection_enabled
 	stream_enabled					= var.is_stream_enabled
-	read_capacity					= local.is_billing_mode_provisioned ? 1 : null
-	write_capacity					= local.is_billing_mode_provisioned ? 1 : null
+	stream_view_type				= var.is_stream_enabled ? var.stream_view_type : null 
+	read_capacity					= local.is_billing_mode_provisioned && !var.is_autoscaling_policy_attached ? 1 : null
+	write_capacity					= local.is_billing_mode_provisioned && !var.is_autoscaling_policy_attached ? 1 : null
 	
 	attribute {
 		name						= var.hash_key
@@ -49,54 +50,44 @@ resource "aws_dynamodb_table" "this" {
 	}
 
 	dynamic "attribute" {
-		for_each					= var.global_secondary_index != null ? [var.global_secondary_index] : []
+		for_each					= var.global_secondary_index
 
 		content {
-			name					= global_secondary_index.attribute_name
-			type					= global_secondary_index.attribute_type
+			name					= attribute.value.attribute_name
+			type					= attribute.value.attribute_type
 		}
 	}
 
 	dynamic "global_secondary_index" {
-		for_each					= var.global_secondary_index != null ? [var.global_secondary_index] : []
+		for_each					= var.global_secondary_index
 
 		content {
-			name					= global_secondary_index.index_name
-			hash_key				= global_secondary_index.attribute_name
-			range_key				= global_secondary_index.range_key
-			write_capacity			= global_secondary_index.write_capacity
-			read_capacity			= global_secondary_index.read_capacity
-			projection_type			= global_secondary_index.projection_type 
-			non_key_attributes		= global_secondary_index.projection_type == "INCLUDE" && global_secondary_index.non_key_attributes != null ? global_secondary_index.non_key_attributes : null
-		}
-	}
-
-	dynamic "attribute" {
-		for_each					= var.local_secondary_index != null ? [var.local_secondary_index] : []
-
-		content {
-			name					= local_secondary_index.attribute_name
-			type					= local_secondary_index.attribute_type
+			name					= global_secondary_index.value.index_name
+			hash_key				= global_secondary_index.value.attribute_name
+			range_key				= global_secondary_index.value.range_key
+			write_capacity			= global_secondary_index.value.write_capacity
+			read_capacity			= global_secondary_index.value.read_capacity
+			projection_type			= global_secondary_index.value.projection_type 
+			non_key_attributes		= global_secondary_index.value.projection_type == "INCLUDE" && global_secondary_index.value.non_key_attributes != null ? global_secondary_index.value.non_key_attributes : null
 		}
 	}
 
 	dynamic "local_secondary_index" {
-		for_each					= var.local_secondary_index != null ? [var.local_secondary_index] : []
-
+		for_each					= var.local_secondary_index
 		content {
-			name					= local_secondary_index.index_name
-			range_key				= local_secondary_index.range_key
-			projection_type			= local_secondary_index.projection_type 
-			non_key_attributes		= local_secondary_index.projection_type == "INCLUDE" && local_secondary_index.non_key_attributes != null ? local_secondary_index.non_key_attributes : null
+			name					= local_secondary_index.value.index_name
+			range_key				= local_secondary_index.value.range_key
+			projection_type			= local_secondary_index.value.projection_type 
+			non_key_attributes		= local_secondary_index.value.projection_type == "INCLUDE" && local_secondary_index.value.non_key_attributes != null ? local_secondary_index.value.non_key_attributes : null
 		}
 	}
 
 	dynamic "replica" {
-		for_each					= var.replica != null ? [var.replica] : []
+		for_each					= var.replica
 
 		content {
-			region_name				= replica.region_name
-			propagate_tags			= replica.propagate_tags
+			region_name				= replica.value.region_name
+			propagate_tags			= replica.value.propagate_tags
 		}
 	}
 
@@ -104,4 +95,8 @@ resource "aws_dynamodb_table" "this" {
 		attribute_name				= "ttl"
 		enabled						= var.is_ttl_enabled
 	}
+
+	lifecycle {
+    	ignore_changes = [replica]
+  	}
 }

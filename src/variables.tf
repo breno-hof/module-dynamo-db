@@ -69,7 +69,7 @@ variable "global_secondary_index" {
 			projection_type			= string
 			non_key_attributes		= optional(list(string))
 	}))
-	default							= null
+	default							= []
 }
 
 variable "local_secondary_index" {
@@ -80,7 +80,7 @@ variable "local_secondary_index" {
 			projection_type			= string
 			non_key_attributes		= optional(list(string))
 	}))
-	default							= null
+	default							= []
 }
 
 variable "replica" {
@@ -89,7 +89,7 @@ variable "replica" {
 			region_name				= string
 			propagate_tags			= optional(bool)
 	}))
-	default							= null
+	default							= []
 }
 
 variable "is_ttl_enabled" {
@@ -102,4 +102,16 @@ variable "is_stream_enabled" {
 	description						= "(Optional) Whether Streams are enabled."
 	type							= bool
 	default							= false
+}
+
+variable "is_autoscaling_policy_attached" {
+	description						= "(Optional) Whether There is a autoscaling policy attached (external)."
+	type							= bool
+	default							= false
+}
+
+variable "stream_view_type" {
+	description						= "(Optional) When an item in the table is modified, StreamViewType determines what information is written to the table's stream. Valid values are KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES."
+	type							= string
+	default							= "NEW_AND_OLD_IMAGES"
 }
