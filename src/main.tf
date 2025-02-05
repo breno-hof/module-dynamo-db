@@ -5,7 +5,9 @@ resource "aws_dynamodb_table" "this" {
 	billing_mode					= var.is_billing_mode_pay_per_request ? "PAY_PER_REQUEST" : "PROVISIONED"
 	deletion_protection_enabled		= var.is_deletion_protection_enabled
 	stream_enabled					= var.is_stream_enabled
-
+	read_capacity					= local.is_billing_mode_provisioned ? 1 : null
+	write_capacity					= local.is_billing_mode_provisioned ? 1 : null
+	
 	attribute {
 		name						= var.hash_key
 		type						= var.hash_key_type
